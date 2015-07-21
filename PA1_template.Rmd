@@ -1,0 +1,91 @@
+---
+title: "Peer Assesment 1"
+author: "Gutxi"
+date: "Thursday, July 16, 2015"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+
+activity <- read.csv("~/data/activity.csv")
+```
+
+**Number of steps by day**
+```{r}
+stepsByDay <- tapply(activity$steps, activity$date, sum, na.rm=TRUE)
+
+```
+
+Histogram
+```{r}
+qplot(stepsByDay, xlab='Total steps per day', ylab='Frequency')
+```
+
+Mean and median of the total steps by day
+```{r}
+stepsByDayMean <- mean(stepsByDay)
+stepsByDayMean 
+stepsByDayMedian <- median(stepsByDay)
+stepsByDayMedian
+```
+**Average daily activity pattern**
+```{r}
+averageStepsPerTimeBlock <- aggregate(x=list(meanSteps=activity$steps), by=list(interval=activity$interval), FUN=mean, na.rm=TRUE)
+```
+
+Time series plot
+```{r}
+ggplot(data=averageStepsPerTimeBlock, aes(x=interval, y=meanSteps)) +
+    geom_line() +
+    xlab("5-minute interval") +
+    ylab("average number of steps taken") 
+```
+
+5-minute interval with maximum number of steps
+```{r}
+mostSteps <- which.max(averageStepsPerTimeBlock$meanSteps)
+timeMostSteps <-  gsub("([0-9]{1,2})([0-9]{2})", "\\1:\\2", averageStepsPerTimeBlock[mostSteps,'interval'])
+timeMostSteps
+```
+**Imputing missing values**
+Calculate and report the total number of missing values in the dataset
+```{r}
+MissingValues <- length(which(is.na(activity$steps)))
+MissingValues
+```
+
+New dataset that is equal to the original dataset but with the missing data filled in
+```{r}
+na_pos <- which(is.na(activity$steps))
+mean_vec <- rep(mean(activity$steps, na.rm=TRUE), times=length(na_pos))
+activity[na_pos, "steps"] <- mean_vec
+head(activity)
+```
+histogram of the total number of steps taken each day
+```{r}
+TotalstepsByDay <- tapply(activity$steps, activity$date, sum)
+qplot(TotalstepsByDay, xlab='Total steps per day', ylab='Frequency', binwidth=500)
+```
+
+Mean and median
+```{r}
+TotalstepsByDayMean<- mean(TotalstepsByDay)
+TotalstepsByDayMean
+TotalstepsByDayMedian<- median(TotalstepsByDay)
+TotalstepsByDayMedian
+```
+
+**Differences in activity patterns between weekdays and weekends**
+new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day
+```{r}
+activity$dateType <-  ifelse(as.POSIXlt(activity$date)$wday %in% c(0,6), 'weekend', 'weekday')
+```
+
+Time series plot
+```{r}
+averagedActivity <- aggregate(steps ~ interval + dateType, data=activity, mean)
+ggplot(averagedActivity, aes(interval, steps)) + geom_line() + facet_grid(dateType ~ .) + xlab("5-minute interval") + ylab("average number of steps")
+```
+
+
